@@ -1,0 +1,60 @@
+
+
+       
+def delete_iframe(url):
+    headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"}
+    res = requests.get(url, headers=headers)
+    res.raise_for_status() # 문제시 프로그램 종료
+    soup = BeautifulSoup(res.text, "lxml") 
+
+    src_url = "https://blog.naver.com/" + soup.iframe["src"]
+    
+    return src_url
+    
+# 본문 스크래핑
+def text_scraping(url):
+    headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"}
+    res = requests.get(url, headers=headers)
+    res.raise_for_status() # 문제시 프로그램 종료
+    soup = BeautifulSoup(res.text, "lxml") 
+
+    if soup.find("div", attrs={"class":"se-main-container"}):
+        text = soup.find("div", attrs={"class":"se-main-container"}).get_text()
+        text = text.replace("\n","") #공백 제거
+        return text
+        
+    elif soup.find("div", attrs={"id":"postViewArea"}):
+        text = soup.find("div", attrs={"id":"postViewArea"}).get_text()
+        text = text.replace("\n","") 
+        return text
+    else:
+        return "확인불가"
+        
+   
+import requests
+import re
+from bs4 import BeautifulSoup
+from urllib.parse import quote
+
+query = "일상블로그"
+url = "https://search.naver.com/search.naver?where=view&sm=tab_jum&query=" + quote(query)
+
+headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"}
+res = requests.get(url, headers=headers)
+res.raise_for_status() # 문제시 프로그램 종료
+soup = BeautifulSoup(res.text, "lxml") 
+
+posts = soup.find_all("li", attrs={"class":"bx _svp_item"}) 
+  
+  for post in posts:
+    post_title = post.find("a", attrs={"class":"api_txt_lines total_tit"}).get_text()
+    print("제목 :",post_title)
+    post_link = post.find("a", attrs={"class":"api_txt_lines total_tit"})['href']
+    print("link :", post_link)
+    blog_p = re.compile("blog.naver.com")
+    blog_m = blog_p.search(post_link)
+    if blog_m:
+      blog_text = text_scraping(delete_iframe(post_link))
+      print(blog_text)
+      print("-"*50)
+   
